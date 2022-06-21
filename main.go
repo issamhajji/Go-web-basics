@@ -67,6 +67,35 @@ func main() {
 
 	})
 
+	r.HandleFunc("/form", func(w http.ResponseWriter, r *http.Request) {
+		type ContactDetails struct {
+			Email   string
+			Subject string
+			Message string
+		}
+
+		tmpl, err := template.ParseFiles("form.html")
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if r.Method != http.MethodPost {
+			tmpl.Execute(w, nil)
+			return
+		}
+
+		details := ContactDetails{
+			Email:   r.FormValue("email"),
+			Subject: r.FormValue("subject"),
+			Message: r.FormValue("message"),
+		}
+
+		_ = details
+
+		tmpl.Execute(w, struct{ Success bool }{true})
+	})
+
 	r.HandleFunc("/create/user/{username}/pass/{password}", func(w http.ResponseWriter, r *http.Request) {
 		// inserir nou usuari
 		vars := mux.Vars(r)
