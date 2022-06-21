@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"time"
@@ -36,6 +37,35 @@ func main() {
 	}*/
 
 	r := mux.NewRouter()
+
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// inici
+		type Todo struct {
+			Title string
+			Done  bool
+		}
+
+		type TodoPageData struct {
+			PageTitle string
+			Todos     []Todo
+		}
+		tmpl, err := template.ParseFiles("index.html")
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		data := TodoPageData{
+			PageTitle: "LLista coses a fer",
+			Todos: []Todo{
+				{Title: "Tasca 1", Done: false},
+				{Title: "Tasca 2", Done: true},
+				{Title: "Tasca 3", Done: false},
+			},
+		}
+
+		tmpl.Execute(w, data)
+
+	})
 
 	r.HandleFunc("/create/user/{username}/pass/{password}", func(w http.ResponseWriter, r *http.Request) {
 		// inserir nou usuari
@@ -115,8 +145,15 @@ func main() {
 		fmt.Fprintf(w, "Se ha borrado el usuario con id: %s con exito!", id)
 	})
 
-	fs := http.FileServer(http.Dir("static/"))
+	// serveix arxius i imatges (sense mux router)
+	/*fs := http.FileServer(http.Dir("assets/"))
 
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))*/
+
+	// serveix arxius i imatges (mux router)
+	staticDir := "/assets/"
+
+	r.PathPrefix(staticDir).Handler(http.StripPrefix(staticDir, http.FileServer(http.Dir("."+staticDir))))
+
 	http.ListenAndServe(":80", r)
 }
