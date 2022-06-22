@@ -12,7 +12,24 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//basic - middleware
+func logging(f http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println(r.URL.Path)
+		f(w, r)
+	}
+}
+
+func foo(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "foo")
+}
+
+func bar(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "bar")
+}
+
 func main() {
+
 	db, err := sql.Open("mysql", "sakila:123456@(127.0.0.1:3306)/test1?parseTime=true")
 	if err != nil {
 		log.Fatal(err)
@@ -20,6 +37,7 @@ func main() {
 	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
+
 	/*{ // crear nova taula
 		query := `
 		CREATE TABLE users (
@@ -37,6 +55,10 @@ func main() {
 	}*/
 
 	r := mux.NewRouter()
+
+	//basic - middleware
+	r.HandleFunc("/foo", logging(foo))
+	r.HandleFunc("/bar", logging(bar))
 
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// inici
