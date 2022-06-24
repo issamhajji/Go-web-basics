@@ -10,6 +10,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 )
 
 //basic - middleware
@@ -26,6 +27,38 @@ func foo(w http.ResponseWriter, r *http.Request) {
 
 func bar(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "bar")
+}
+
+// Sessions
+
+var (
+	key   = []byte("clau-super-secreta")
+	store = sessions.NewCookieStore(key)
+)
+
+func secret(w http.ResponseWriter, r *http.Request) {
+	session, _ := store.Get(r, "sweet-cookie")
+
+	if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
+		http.Error(w, "Prohibit!", http.StatusForbidden)
+		return
+	}
+
+	fmt.Fprintln(w, "El pastís es molt bó!")
+}
+
+func login(w http.ResponseWriter, r *http.Request) {
+	session, _ := store.Get(r, "sweet-cookie")
+
+	session.Values["authenticated"] = true
+	session.Save(r, w)
+}
+
+func logout(w http.ResponseWriter, r *http.Request) {
+	session, _ := store.Get(r, "sweet-cookie")
+
+	session.Values["authenticated"] = false
+	session.Save(r, w)
 }
 
 func main() {
@@ -88,6 +121,12 @@ func main() {
 		tmpl.Execute(w, data)
 
 	})
+
+	// sessions
+
+	r.HandleFunc("/secret", secret)
+	r.HandleFunc("/login", login)
+	r.HandleFunc("/logout", logout)
 
 	r.HandleFunc("/form", func(w http.ResponseWriter, r *http.Request) {
 		type ContactDetails struct {
