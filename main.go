@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -59,6 +60,14 @@ func logout(w http.ResponseWriter, r *http.Request) {
 
 	session.Values["authenticated"] = false
 	session.Save(r, w)
+}
+
+// encode - decode JSON
+
+type User struct {
+	Firstname string `json:"firstname"`
+	Lastname  string `json:"lastname"`
+	Age       int    `json:"age"`
 }
 
 func main() {
@@ -235,6 +244,23 @@ func main() {
 		fmt.Fprintf(w, "Se ha borrado el usuario con id: %s con exito!", id)
 	})
 
+	// encode decode JSON
+
+	r.HandleFunc("/decode", func(w http.ResponseWriter, r *http.Request) {
+		var user User
+		json.NewDecoder(r.Body).Decode(&user)
+		fmt.Fprintf(w, "%s %s te %d anys!", user.Firstname, user.Lastname, user.Age)
+	})
+
+	r.HandleFunc("/encode", func(w http.ResponseWriter, r *http.Request) {
+		Isam := User{
+			Firstname: "Isam",
+			Lastname:  "Hajji",
+			Age:       23,
+		}
+
+		json.NewEncoder(w).Encode(Isam)
+	})
 	// serveix arxius i imatges (sense mux router)
 	/*fs := http.FileServer(http.Dir("assets/"))
 
